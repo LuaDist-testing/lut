@@ -1,16 +1,17 @@
 -- This file was automatically generated for the LuaDist project.
 
 package = "lut"
-version = "1.1.1-1"
+version = "1.2.0-1"
 -- LuaDist source
 source = {
-  tag = "1.1.1-1",
+  tag = "1.2.0-1",
   url = "git://github.com/LuaDist-testing/lut.git"
 }
 -- Original source
 -- source = {
 --   url = 'git://github.com/lubyk/lut',
---   tag = 'REL-1.1.1',
+--   tag = 'REL-1.2.0',
+--   dir = 'lut',
 -- }
 description = {
   summary = "Utility module for lubyk. Contains a documentation generator and testing facilities.",
@@ -39,6 +40,7 @@ build = {
     ['lut'            ] = 'lut/init.lua',
     ['lut.Builder'    ] = 'lut/Builder.lua',
     ['lut.Doc'        ] = 'lut/Doc.lua',
+    ['lut.Project'    ] = 'lut/Project.lua',
     ['lut.Test'       ] = 'lut/Test.lua',
   },
   install = {
@@ -54,6 +56,23 @@ build = {
       ['lut.assets.doc.img.glyphicons-halflings_png'] = 'lut/assets/doc/img/glyphicons-halflings.png',
       ['lut.assets.doc.js.bootstrap_min_js'] = 'lut/assets/doc/js/bootstrap.min.js',
       ['lut.assets.doc.template_html'  ] = 'lut/assets/doc/template.html',
+      ['lut.assets.project.doc.index_html'] = 'lut/assets/project/doc/index.html',
+      ['lut.assets.project.doc.LiveFoo_lua'] = 'lut/assets/project/doc/LiveFoo.lua',
+      ['lut.assets.project.History_txt'] = 'lut/assets/project/History.txt',
+      ['lut.assets.project.include.type.Foo_h'] = 'lut/assets/project/include/type/Foo.h',
+      ['lut.assets.project.include.type.type_h'] = 'lut/assets/project/include/type/type.h',
+      ['lut.assets.project.LICENSE'    ] = 'lut/assets/project/LICENSE',
+      ['lut.assets.project.README_md'  ] = 'lut/assets/project/README.md',
+      ['lut.assets.project.scripts.bind_lua'] = 'lut/assets/project/scripts/bind.lua',
+      ['lut.assets.project.scripts.build_lua'] = 'lut/assets/project/scripts/build.lua',
+      ['lut.assets.project.scripts.doc_lua'] = 'lut/assets/project/scripts/doc.lua',
+      ['lut.assets.project.src.Foo_cpp'] = 'lut/assets/project/src/Foo.cpp',
+      ['lut.assets.project.src.type_cpp'] = 'lut/assets/project/src/type.cpp',
+      ['lut.assets.project.test.all_lua'] = 'lut/assets/project/test/all.lua',
+      ['lut.assets.project.test.Foo_test_lua'] = 'lut/assets/project/test/Foo_test.lua',
+      ['lut.assets.project.test.type_test_lua'] = 'lut/assets/project/test/type_test.lua',
+      ['lut.assets.project.type.Foo_lua'] = 'lut/assets/project/type/Foo.lua',
+      ['lut.assets.project.type.init_lua'] = 'lut/assets/project/type/init.lua',
     },
   },
 }
