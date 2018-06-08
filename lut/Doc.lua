@@ -79,6 +79,9 @@
     -- Out of file function definition (in C++ for example).
     -- function lib:connect(server)
 
+    -- Out of file constant definition
+    -- lib.Default
+
   To ignore functions, use `-- nodoc` as documentation:
 
     -- nodoc
@@ -116,6 +119,12 @@
       -- Some text for this group of attributes.
 
       phone = {default = '', format = '000 000 00 00'},
+
+      -- Documentation of element in list
+      'lua ~> 5.1',
+
+      -- Other element
+      'lub ~> 1.0',
     }
 
   Such a list will create the following documentation:
@@ -136,6 +145,12 @@ local ATTRIBS = { -- doc
   -- Some text for this group of attributes.
 
   phone = {default = '', format = '000 000 00 00'},
+
+  -- Documentation of element in list
+  'lua ~> 5.1',
+
+  -- Other element
+  'lub ~> 1.0',
 }
 
 --[[
@@ -210,14 +225,24 @@ local ATTRIBS = { -- doc
     printf("Result = %.2f\n", x);
 
   As you can see, you have to declare other languages with `#name` if the code
-  is not Lua.
+  is not Lua. When using `#txt`, the code is not styled with prettyprint. The
+  code lang can also contain multiple words. The first word is the language and
+  the following are used for CSS class styling.
 
-  # Styles
+  Special ascii art code:
+
+    #txt ascii
+    +--------+
+    | a box  |
+    +--------+
+
+
+  # Styles, links
 
   You can enhance your comments with links, bold, italics and images.
 
   Some links are automatically created when the parser sees `module.Class` like
-  this: lut.Doc. A custom link is made with `[link title](http://example.com)`.
+  this lut.Doc or `#Some-local-id`. A custom link is made with `[link title](http://example.com)`.
 
   Bold is done by using stars: `some text with *bold* emphasis`. Italics are
   inserted with underscores: `some text _with italic_ emphasis`.
@@ -227,6 +252,11 @@ local ATTRIBS = { -- doc
   Inline code is inserted with backticks:
   
     -- This is `inline code`.
+
+
+  You can also insert raw html with `<html>` tag.
+
+    <html><a href='example.com'>hello</a></html>
 
   # Lists
 
@@ -296,7 +326,7 @@ local parser  = {}
 local CODE = '§§'
 local ALLOWED_OPTIONS = {lit = true, loose = true}
 local DEFAULT_HEADER = [[ ]]
-local DEFAULT_FOOTER = [[ made with <a href='http://doc.lubyk.org/lut.Doc.html'>lut.Doc</a> ]]
+local DEFAULT_FOOTER = [[ Documentation on {{os.date '%Y-%m-%d'}} with <a href='http://doc.lubyk.org/lut.Doc.html'>lut.Doc</a> ]]
 local gsub  = string.gsub
 local match = string.match
 
@@ -331,8 +361,8 @@ lib.ASSETS =  {
 -- + head       : HTML content to insert in `<head>` tag.
 -- + index_head : HTML content to insert in `<head>` tag of index file.
 -- + css        : Path to a CSS file to use instead of `css/docs.css`.
--- + header     : HTML code to display in header.
--- + footer     : HTML code to display in footer.
+-- + header     : HTML code to display in header (lub.Template evaluated).
+-- + footer     : HTML code to display in footer (lub.Template evaluated).
 -- + target     : Target directory (only used when using PNG image generation
 --                for math code.
 function lib.new(path, def)
@@ -579,11 +609,10 @@ function private.makeDoc(tree, def)
       -- Children navigation (listed in main div)
       children   = elem,
       target     = def.target,
-      header     = def.header,
-      footer     = def.footer or DEFAULT_FOOTER,
       toplevel   = tree.is_root,
       opts       = def,
     })
+    
     elem.__title   = doc.sections[1].title
     elem.__summary = doc.sections[1][1][1]
     local img = doc.sections[1][1][2]
@@ -593,6 +622,10 @@ function private.makeDoc(tree, def)
     elem.__todo    = doc.todo
     elem.__fixme   = doc.fixme
     local trg = def.target .. '/' .. doc.fullname .. '.' .. def.format
+
+    doc.header = def.header and lub.Template(def.header):run {self = elem}
+    doc.footer = lub.Template(def.footer or DEFAULT_FOOTER):run {self = elem}
+
     lub.writeall(trg, private.output[def.format](doc, def.template))
   end
 
@@ -617,11 +650,13 @@ function private.makeDoc(tree, def)
       -- Children navigation (listed in main div)
       children   = tree,
       target     = def.target,
-      header     = def.header,
-      footer     = def.footer or DEFAULT_FOOTER,
       toplevel   = false,
       opts       = def,
     })
+
+    doc.header = def.header and lub.Template(def.header):run {self = tree}
+    doc.footer = lub.Template(def.footer or DEFAULT_FOOTER):run {self = tree}
+    
     local trg = def.target .. '/index.' .. def.format
     lub.writeall(trg, private.output[def.format](doc, def.template))
   end
@@ -805,6 +840,21 @@ function private:newFunction(i, typ, fun, params)
   self.in_func = self.group
 end
 
+function private:newConstant(i, const)
+  local i = #self.group
+  if self.group[i] and self.group[i].text == 'nodoc' then
+    -- ignore last para
+    table.remove(self.group)
+    self.para = nil
+    return
+  end
+
+  -- Store last group as function definition
+  self.group.const = const
+  private.useGroup(self)
+  self.in_func = self.group
+end
+
 function private:newParam(i, key, params, typ)
   typ = typ or 'param'
   local i = #self.group
@@ -823,6 +873,9 @@ function private:newParam(i, key, params, typ)
     -- This is to have creation order
     table.insert(self.curr_param, self.group)
     self.curr_param[key] = self.group
+  elseif typ == 'lparam' then
+    table.insert(self.curr_param, self.group)
+    self.curr_param[key] = self.group
   else
     table.insert(self.params, self.group)
     self.params[key] = self.group
@@ -830,6 +883,16 @@ function private:newParam(i, key, params, typ)
 
   private.useGroup(self)
   self.group = {}
+end
+
+function private:newAttrib(i, title, prefix)
+  local code = code or '= {'
+  private.flushPara(self)
+  table.insert(self.group, {
+    -- Documenting an attribute
+    attr = title, prefix = prefix
+  })
+  private.useGroup(self)
 end
 
 function private:newTitle(i, title, typ)
@@ -982,6 +1045,10 @@ parser.mgroup = {
   { match  = '^ *function lib([:%.])([^%(]+)(.*)$',
     output = private.newFunction,
   },
+  -- out of file constant
+  { match  = '^ *lib%.(.*)$',
+    output = private.newConstant,
+  },
   -- todo, fixme, warn
   { match = '^ *(([A-Z][A-Z][A-Z][A-Z]+):? ?(.*))$',
     output = private.todoFixme,
@@ -1022,7 +1089,7 @@ parser.mcode = {
   -- first line
   { match  = '^    (.*)$',
     output = function(self, i, d)
-      local lang = match(d, '#([^ ]+)')
+      local lang = match(d, '#(.+)')
       if lang then
         d = nil
       else
@@ -1092,6 +1159,7 @@ parser.mmath = {
   -- Inline
   { match  = '^ *%[math%](.*)%[/math%]', 
     output = function(self, i, d)
+      if d == '' then return end
       private.flushPara(self)
       self.para = {math = 'inline', text = d}
       private.flushPara(self)
@@ -1180,6 +1248,10 @@ parser.group = {
   { match  = '^ *%-%- *function lib([:%.])([^%(]+)(.*)$',
     output = private.newFunction,
   },
+  -- out of file constant
+  { match  = '^ *%-%- *lib%.(.*)$',
+    output = private.newConstant,
+  },
   -- math section
   { match = '^ *%-%- *%[math%]',
     move  = function() return parser.math, true end,
@@ -1232,7 +1304,7 @@ parser.end_comment = {
         -- Special case where a lib attribute itself is documented
         self.curr_param = {}
         self.params[key] = self.curr_param
-        private.newTitle(self, i, '.'..key .. ' = ')
+        private.newAttrib(self, i, key, '.')
         self.force_move = parser.params
       else
         if self.group[1] and self.group[1].heading then
@@ -1308,7 +1380,7 @@ parser.lua = {
           -- Special case where a lib attribute itself is documented
           self.curr_param = {}
           self.params[key] = self.curr_param
-          private.newTitle(self, i, '.'..key .. ' = {')
+          private.newAttrib(self, i, key, '.')
           self.force_move = parser.params
         else
           if not self.loose then
@@ -1344,20 +1416,24 @@ parser.lua = {
     end,
   },
   -- params
-  { match  = '^ *(.-) *{ %-%- *doc *$',
+  { match  = '^ *(.-) *= *{ %-%- *doc *$',
     output = function(self, i, key)
       self.curr_param = {}
       self.params[key] = self.curr_param
       -- remove 'local' prefix
       local k = match(key, '^local *(.+)$')
       key = k or key
-      private.newTitle(self, i, key .. ' {')
+      private.newAttrib(self, i, key)
     end,
     move = function() return parser.params end,
   },
   -- todo, fixme, warn
   { match = '^ *(%-%- *([A-Z][A-Z][A-Z][A-Z]+):? ?(.*))$',
-    output = private.todoFixme,
+    -- This does not support multiline todo.
+    output = function(self, ...)
+      private.todoFixme(self, ...)
+      private.flushPara(self)
+    end
   },
   { match  = '^ *%-%- +(.+)$',
     move = function(self)
@@ -1418,10 +1494,16 @@ parser.params = {
       private.newParam(self, i, key, d, 'tparam')
     end,
   },
+  -- list entry
+  { match  = '^ *(.*), *$',
+    output = function(self, i, value)
+      private.newParam(self, i, value, nil, 'lparam')
+    end,
+  },
   -- end of params definition
   { match = '^}',
     output = function(self, i)
-      private.newTitle(self, i, '}', 'end')
+      private.newAttrib(self, i, '}')
       private.useGroup(self)
     end,
     move = function(self)
@@ -1524,6 +1606,15 @@ function private:paraToHtml(para)
   local text = para.text or ''
   if para.class then
     return "<p class='"..para.class.."'>"..private.textToHtml(self, text).."</p>"
+  elseif para.attr then
+    -- Starting attribute documentation
+    if para.attr == '}' then
+      -- end of definition
+      return "<h4 class='entry attrib'>}</h4>"
+    else
+      local prefix = para.prefix and '<span>.</span>' or ''
+      return "<h4 id='"..para.attr.."' class='entry param'>"..prefix..private.textToHtml(self, para.attr)..' = {</h4>'
+    end
   elseif para.heading then
     return "<h4 class='sub-"..para.heading.."'>"..private.textToHtml(self, text).."</h4>"
   elseif para.math then
@@ -1546,6 +1637,8 @@ function private:paraToHtml(para)
     -- render list
     return private.listToHtml(self, para)
   else
+    local raw = match(text, '^ *<html>(.-)</html>')
+    if raw then return raw end
     return "<p>"..private.textToHtml(self, text).."</p>"
   end
 end
@@ -1618,8 +1711,8 @@ function private:textToHtml(text)
   end)
   p = private.autoLink(p, codes)
   -- section link #Make or method link #foo
-  p = gsub(p, ' #([A-Za-z]+[A-Za-z_]+)', function(name)
-    table.insert(codes, string.format(" <a href='#%s'>%s</a>", name, name))
+  p = gsub(p, ' #([A-Za-z]+[A-Za-z_-]+)', function(name)
+    table.insert(codes, string.format(" <a href='#%s'>%s</a>", name, name:gsub('-', ' ')))
     return CODE..#codes
   end)
 
@@ -1685,6 +1778,7 @@ local function osTry(cmd)
 end
 
 function private:mathjaxTag(para)
+  if match(para.text, '^ *$') then return '' end
   if para.math == 'inline' then
     return '\\('..para.text..'\\)'
   else

@@ -62,6 +62,11 @@ function should.extractDescription()
   }, description)
 end
 
+function should.extractOutOfFileParam()
+  local doc = lut.Doc(tpath)
+  assertMatch("<h4 id='Default' class='entry const'>Default</h4>", doc:toHtml())
+end                                
+
 function should.convertToHtml()
   local doc = lut.Doc(tpath)
   assertMatch('<title>Documentation Tester</title>', doc:toHtml())
@@ -102,14 +107,18 @@ function should.parseCode()
   Summary
 --]]--
 
-p { -- doc
+lib.p = { -- doc
 
   -- Foo bar baz
   f = 5,
+
+  -- List element
+  "Hello",
 }
 
     ]=],
   })
+
   assertValueEqual({
     p = {
       f = {
@@ -117,10 +126,18 @@ p { -- doc
         tparam = 'f',
         {text = 'Foo bar baz'},
       },
+      ['"Hello"'] = {
+        lparam = '"Hello"',
+        {text = 'List element'},
+      },
       {
         params = '5',
         tparam = 'f',
         {text = 'Foo bar baz'},
+      },
+      {
+        lparam = '"Hello"',
+        {text = 'List element'},
       },
     },
   }, doc.params)

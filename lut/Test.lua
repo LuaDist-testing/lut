@@ -160,6 +160,9 @@ end
 --
 --   -- Run all tests now.
 --   should:test()
+--
+-- WARN: Once tests are run, this function calls `os.exit` with a return code of 0
+-- (success) or -1 (failure).
 
 -- nodoc
 function lib:test(batch)
@@ -187,6 +190,9 @@ end
 -- If the optional `reject` pattern is provided, paths matching this pattern
 -- will be, well, rejected. See [lub.path](lub.html#path) for details on the
 -- pipe syntax.
+--
+-- WARN: Once tests are run, this function calls `os.exit` with a return code of 0
+-- (success) or -1 (failure).
 function lib.files(list_or_path, pattern, reject)
   private.parseArgs()
   pattern = pattern or '%_test.lua$'
@@ -264,7 +270,7 @@ end
 -- contents, use #assertValueEqual.
 function assertEqual(expected, value, resolution, up_count)
   up_count = up_count or 1
-  if resolution and type(expected) == 'number' then
+  if resolution and type(expected) == 'number' and type(value) == 'number' then
     local ok = (value >= expected - resolution) and (value <= expected + resolution)
     assert(ok, string.format('Expected %s but found %s (resolution: %f).', formatArg(expected), formatArg(value), resolution), up_count + 1)
   else
@@ -351,7 +357,7 @@ end
 
 -- Assert that `value` is nil.
 function assertNil(value)
-  assert(type(value) == 'nil', string.format('Should be a Nil but was %s.', type(value)))
+  assert(type(value) == 'nil', string.format('Should be nil but was %s.', type(value)))
 end
 
 -- Assert that `value` is in the range defined by [`t1`, `t2`[.
