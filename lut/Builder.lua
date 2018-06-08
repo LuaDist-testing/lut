@@ -166,6 +166,8 @@ local lib     = lub.class 'lut.Builder'
 local expandPaths
 local PLATFORMS = {'macosx', 'linux', 'win32'}
 
+-- # Class functions
+
 -- Create a new builder object from a configuration table (see above for config
 -- format and options).
 function lib.new(config)
@@ -175,11 +177,14 @@ function lib.new(config)
   return setmetatable(self, lib)
 end
 
+-- # Methods
+
+-- Generate files.
 function lib:make()
   local config = self.config
   local build = config.BUILD
 
-  assert(build.github or (build.url and build.dir), 'Missing BUILD.github or BUILD.url and BUILD.dir.')
+  assert(build.github or (build.url and (build.dir or build.tag)), 'Missing BUILD.github or BUILD.url and BUILD.dir.')
 
   -- Platform specific sources or link libraries
   if build.platlibs and not build.platkeys then
