@@ -1,3 +1,11 @@
+== 1.1.0 2014-08-15
+
+  * Added lut.Builder to help generate build files for CMake, luadist and luarocks.
+  * Fixed tests running when verbose is on.
+  * Small changes to documentation.
+  * Added support for 'filter' and 'prepend' in lut.Doc copy operation.
+  * Fixed lub dependency information.
+
 == 1.0.3 2014-01-26
 
   * Enable const declaration.
