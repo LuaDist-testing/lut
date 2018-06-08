@@ -1,16 +1,16 @@
 -- This file was automatically generated for the LuaDist project.
 
 package = "lut"
-version = "1.2.0-1"
+version = "1.2.1-1"
 -- LuaDist source
 source = {
-  tag = "1.2.0-1",
+  tag = "1.2.1-1",
   url = "git://github.com/LuaDist-testing/lut.git"
 }
 -- Original source
 -- source = {
 --   url = 'git://github.com/lubyk/lut',
---   tag = 'REL-1.2.0',
+--   tag = 'REL-1.2.1',
 --   dir = 'lut',
 -- }
 description = {
@@ -30,7 +30,7 @@ description = {
 }
 
 dependencies = {
-  "lua >= 5.1, < 5.3",
+  "lua >= 5.1, < 5.4",
   "lub >= 1.0.3, < 2",
 }
 build = {

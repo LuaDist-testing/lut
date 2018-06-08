@@ -35,7 +35,13 @@ dependencies = {
 {% end %}
 }
 build = {
-  type = 'builtin',
+  type = '{{BUILD.type or 'builtin'}}',
+{% if BUILD.type == 'cmake' then %}
+  variables = {
+    LUA_INSTALL_DIR    = '/usr/local/share/lua/5.1',
+    LUA_INSTALL_BINDIR = '/usr/local/lib/lua/5.1',
+  },
+{% else %}
   modules = {
     -- Plain Lua files
     {{string.format("[%-17s] = '%s/%s.lua'", "'"..type.."'", type, 'init')}},
@@ -101,6 +107,7 @@ idx = idx + 1 %}
     },
 {% end %}
   },
+{% end %}
 {% end %}
 }
 
